@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>广西城市职业大学【空港校区】离线课表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { techBlue: '#0284c7', techPurple: '#6366f1' }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { --safe-top: env(safe-area-inset-top); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; transition: background 0.4s ease, color 0.4s ease; }
+        html.light body { background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 50%, #dbeafe 100%) !important; color: #1e293b; }
+        html.dark body { background: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%) !important; color: #f1f5f9; }
+        .tech-grid { background-image: linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(99, 102, 241, 0.08) 1px, transparent 1px); background-size: 32px 32px; }
+        .glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.12) 100%) !important; backdrop-filter: blur(25px) saturate(200%) !important; -webkit-backdrop-filter: blur(25px) saturate(200%) !important; border: 1px solid rgba(255, 255, 255, 0.45) !important; border-top: 1.5px solid rgba(255, 255, 255, 0.8) !important; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important; }
+        .dark .glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-top: 1.5px solid rgba(255, 255, 255, 0.35) !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important; }
+        .glass-modal { background: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(30px) saturate(200%) !important; border: 1px solid rgba(255, 255, 255, 0.9) !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2) !important; }
+        .dark .glass-modal { background: rgba(15, 23, 42, 0.94) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7) !important; }
+        .tab-content { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .glass-input { background: rgba(255, 255, 255, 0.85) !important; border: 1px solid rgba(203, 213, 225, 0.9) !important; color: #0f172a !important; }
+        .dark .glass-input { background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #f8fafc !important; }
+        .liquid-capsule-container { display: inline-flex; align-items: center; padding: 4px; border-radius: 999px !important; background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4) !important; }
+        .dark .liquid-capsule-container { background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; }
+        .liquid-capsule-item { padding: 6px 18px; border-radius: 999px !important; font-size: 13px; font-weight: 700; color: #475569; cursor: pointer; border: none !important; background: transparent !important; transition: all 0.3s ease; }
+        .dark .liquid-capsule-item { color: rgba(255, 255, 255, 0.7); }
+        .liquid-capsule-item.active { color: #ffffff !important; font-weight: 800; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.45); }
+        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3polyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.85rem center; background-size: 1.1em; padding-right: 2.5rem; }
+        .schedule-container::-webkit-scrollbar { height: 8px; }
+        .schedule-container::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .smooth-scroll-x { display: flex; overflow-x: auto !important; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        .theme-pill-slider { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="tech-grid min-h-screen overflow-x-hidden pb-28">
+
+    <!-- 顶栏导航 -->
+    <nav class="fixed top-0 w-full z-50 glass px-6 py-3 flex items-center justify-between shadow-lg" style="padding-top: calc(var(--safe-top) + 0.5rem);">
+        <div class="flex items-center gap-3">
+            <div class="relative w-11 h-11 flex-shrink-0">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="w-full h-full rounded-full border-2 border-indigo-500 bg-white cursor-pointer shadow-md" id="avatarImg">
+                <input type="file" id="avatarInput" class="hidden" accept="image/*">
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold leading-tight text-slate-900 dark:text-indigo-300 tracking-tight flex items-center gap-1.5">
+                    <span>广西城市职业大学【空港校区】</span>
+                    <i data-lucide="cpu" class="w-4 h-4 text-indigo-500"></i>
+                </h1>
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400">离线课表中心</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button onclick="openCloudGuideModal()" class="px-3.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-full font-extrabold text-xs flex items-center gap-1.5 border border-indigo-400/30 transition-all">
+                <i data-lucide="cloud-cog" class="w-4 h-4"></i>
+                <span>坚果云同步指南</span>
+            </button>
+            <div class="relative bg-slate-200/80 dark:bg-slate-800/90 p-1 rounded-full flex items-center shadow-inner cursor-pointer select-none" onclick="toggleDarkMode()">
+                <div id="themeSlider" class="theme-pill-slider absolute top-1 left-1 w-8 h-8 rounded-full bg-white dark:bg-indigo-600 shadow-md transform translate-x-0"></div>
+                <div class="relative z-10 w-8 h-8 flex items-center justify-center text-amber-500 dark:text-slate-400"><i data-lucide="sun" class="w-4 h-4"></i></div>
+                <div class="relative z-10 w-8 h-8 flex items-center justify-center text-slate-400 dark:text-indigo-200"><i data-lucide="moon" class="w-4 h-4"></i></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区切换 -->
+    <div class="mt-20 max-w-[1450px] mx-auto px-6 space-y-4">
+        <div class="flex justify-center w-full">
+            <div class="liquid-capsule-container gap-2">
+                <button id="btnSchedule" onclick="switchMainTab('schedule')" class="liquid-capsule-item active flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4"></i><span>课表中心</span></button>
+                <button id="btnAnniversary" onclick="switchMainTab('anniversary')" class="liquid-capsule-item flex items-center gap-1.5 hover:text-rose-500"><i data-lucide="heart" class="w-4 h-4 text-rose-500"></i><span>纪念日程</span></button>
+                <button id="btnTodo" onclick="switchMainTab('todo')" class="liquid-capsule-item flex items-center gap-1.5 hover:text-indigo-500"><i data-lucide="check-square" class="w-4 h-4"></i><span>待办日程</span><span id="todoBadge" class="ml-0.5 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full hidden">0</span></button>
+            </div>
+        </div>
+
+        <div id="scheduleMainView" class="tab-content space-y-4">
+            <div class="max-w-xl mx-auto flex flex-col items-center gap-2.5 glass px-5 py-3 rounded-3xl shadow-md">
+                <div class="flex items-center justify-center gap-3 w-full">
+                    <button onclick="changeWeek(-1)" class="p-1.5 rounded-xl hover:bg-slate-200/60 text-indigo-600 dark:text-indigo-400 font-bold"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <div class="flex items-center gap-2 glass-input px-3 py-1 rounded-2xl shadow-sm">
+                        <i data-lucide="calendar" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                        <select id="weekSelect" onchange="onWeekSelectChange(this.value)" class="bg-transparent text-slate-800 dark:text-slate-100 font-extrabold text-sm py-0.5 focus:outline-none cursor-pointer"></select>
+                    </div>
+                    <button onclick="changeWeek(1)" class="p-1.5 rounded-xl hover:bg-slate-200/60 text-indigo-600 dark:text-indigo-400 font-bold"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex items-center justify-center gap-6 pt-2 border-t border-slate-200/60 dark:border-slate-700/50 w-full text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-indigo-600"><input type="checkbox" id="showOtherWeeksToggle" onchange="toggleShowOtherWeeks()" class="rounded text-indigo-600 w-4 h-4"><span>显示非本周课程</span></label>
+                    <div class="w-px h-3 bg-slate-300 dark:bg-slate-700"></div>
+                    <button onclick="openTimeModal()" class="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4"></i><span>自定义节次时间</span></button>
+                </div>
+            </div>
+            <div class="glass rounded-3xl shadow-2xl overflow-hidden">
+                <div class="schedule-container overflow-x-auto">
+                    <div class="min-w-[1380px] grid grid-cols-8 bg-slate-200/50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800" id="weekHeaderGrid"></div>
+                    <div class="min-w-[1380px] flex flex-col" id="scheduleGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="anniversaryMainView" class="tab-content hidden space-y-5">
+            <div class="flex items-center justify-between glass px-6 py-4 rounded-3xl shadow-md">
+                <div class="flex items-center gap-2.5"><i data-lucide="heart" class="w-6 h-6 text-rose-500"></i><h2 class="text-xl font-black text-slate-800 dark:text-slate-100">纪念日程中心</h2></div>
+                <button onclick="openAnniversaryModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs flex items-center gap-1.5 shadow-md"><i data-lucide="plus" class="w-4 h-4"></i><span>新建纪念日</span></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5" id="anniversaryList"></div>
+            <div class="glass-modal p-6 rounded-3xl shadow-2xl flex flex-col space-y-4">
+                <div class="flex items-center gap-2 text-xs font-extrabold text-slate-600 dark:text-slate-300"><i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i><span class="text-sm">纪念时刻时光轴</span></div>
+                <div class="relative pt-12 pb-6 min-h-[180px] flex items-end">
+                    <div class="absolute bottom-10 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-rose-400 to-indigo-500 rounded-full opacity-40"></div>
+                    <div class="smooth-scroll-x py-2 px-6 gap-16 items-end relative z-10 w-full" id="anniversaryTimeline"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="todoMainView" class="tab-content hidden space-y-5">
+            <div class="flex items-center justify-between glass px-6 py-4 rounded-3xl shadow-md">
+                <div class="flex items-center gap-2.5"><i data-lucide="check-square" class="w-6 h-6 text-indigo-600"></i><h2 class="text-xl font-black text-slate-800 dark:text-slate-100">待办日程中心</h2></div>
+                <button onclick="openTodoModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-2xl font-bold text-xs flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i><span>新建待办</span></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <div class="md:col-span-7 glass-modal p-5 rounded-3xl flex flex-col shadow-lg aspect-square">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <select id="calendarYearSelect" onchange="onCalendarYearChange(this.value)" class="glass-input text-indigo-600 font-black text-xs px-2.5 py-1 rounded-2xl"></select>
+                            <select id="calendarMonthSelect" onchange="onCalendarMonthChange(this.value)" class="glass-input text-indigo-600 font-black text-xs px-2.5 py-1 rounded-2xl"></select>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="moveCalendarMonth(-1)" class="p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                            <button onclick="resetCalendarToAll()" class="text-xs font-extrabold text-indigo-600 px-2.5 py-1 glass-input rounded-2xl">全部视角</button>
+                            <button onclick="moveCalendarMonth(1)" class="p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 py-2"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                    <div class="grid grid-cols-7 gap-2 text-center font-bold text-sm flex-1 items-center" id="calendarGrid"></div>
+                </div>
+                <div class="md:col-span-5 flex flex-col space-y-3">
+                    <div class="flex items-center justify-between px-2"><span id="selectedDateTitle" class="text-xs font-extrabold text-slate-600 dark:text-slate-300">当前视角：全部待办</span></div>
+                    <div class="space-y-3 no-scrollbar pr-1 max-h-[500px] overflow-y-auto" id="todoList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 坚果云免错同步指南弹窗 -->
+    <div id="cloudGuideModal" class="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="cloud" class="w-5 h-5 text-indigo-500"></i><span>坚果云同步指南（100% 成功）</span></h3>
+                <button onclick="closeCloudGuideModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2.5 leading-relaxed">
+                <p>由于浏览器有严格的安全和跨域限制，任何网页直接连接坚果云服务器都会遇到网络报错。通过坚果云客户端同步是最完美的零报错方案：</p>
+                <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 space-y-2">
+                    <p class="font-bold text-indigo-600 dark:text-indigo-400">💡 推荐日常操作：</p>
+                    <p>1. <b>电脑端：</b>点击下方“导出数据”，把生成的 <b>.json</b> 文件直接保存到电脑上的<b>坚果云同步盘文件夹</b>中。</p>
+                    <p>2. <b>手机端：</b>坚果云 App 会自动将文件同步到你的 iPhone。在手机上用浏览器打开本网页，点击下方<b>“导入数据”</b>选择该文件即可无缝同步！</p>
+                </div>
+            </div>
+            <button onclick="closeCloudGuideModal()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-2xl text-xs shadow-md">我知道了</button>
+        </div>
+    </div>
+
+    <!-- 底部功能栏 -->
+    <div class="fixed bottom-5 left-0 right-0 px-4 flex justify-center z-40">
+        <div class="glass px-5 py-2.5 rounded-full flex items-center gap-3 shadow-xl">
+            <button onclick="exportData()" class="px-3 py-1.5 rounded-full hover:bg-slate-200/60 flex items-center gap-1.5 text-xs font-bold text-indigo-600"><i data-lucide="file-down" class="w-4 h-4"></i><span>导出备份</span></button>
+            <div class="w-px h-4 bg-slate-300"></div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-full hover:bg-slate-200/60 flex items-center gap-1.5 text-xs font-bold text-emerald-600"><i data-lucide="file-up" class="w-4 h-4"></i><span>导入数据</span><input type="file" id="importInput" accept=".json" class="hidden" onchange="importData(event)"></label>
+            <div class="w-px h-4 bg-slate-300"></div>
+            <button onclick="openCourseModal()" class="px-3.5 py-1.5 rounded-full bg-indigo-600 text-white flex items-center gap-1.5 text-xs font-bold shadow-md"><i data-lucide="plus-circle" class="w-4 h-4"></i><span>添加课程</span></button>
+            <div class="w-px h-4 bg-slate-300"></div>
+            <button onclick="openManageModal()" class="px-2.5 py-1.5 rounded-full hover:bg-rose-500/10 flex items-center gap-1 text-xs font-bold text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i><span>管理</span></button>
+        </div>
+    </div>
+
+    <!-- 弹窗合集 -->
+    <div id="courseDetailModal" class="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-5">
+            <div class="flex flex-col items-center justify-center text-center">
+                <div id="detailBadge" class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg text-white font-black text-xl mb-3"><i data-lucide="book-open" class="w-7 h-7"></i></div>
+                <h3 id="detailName" class="text-xl font-black text-slate-800 dark:text-slate-100"></h3>
+                <p id="detailTimeSpan" class="text-xs font-bold text-indigo-600 mt-1"></p>
+            </div>
+            <div class="space-y-3 glass-input p-4 rounded-2xl text-sm font-bold">
+                <div class="flex justify-between border-b pb-2"><span class="text-slate-500">任课教师</span><span id="detailTeacher"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-slate-500">上课地点</span><span id="detailRoom"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-slate-500">课程学分</span><span id="detailCredit"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">上课周数</span><span id="detailWeeks"></span></div>
+            </div>
+            <button onclick="closeCourseDetailModal()" class="w-full py-3 bg-slate-200 dark:bg-slate-800 font-bold rounded-2xl text-sm">关闭</button>
+        </div>
+    </div>
+
+    <div id="courseModal" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 text-center">添加课程</h3>
+            <input type="text" id="cName" placeholder="课程名称" class="w-full glass-input p-3 rounded-2xl text-sm font-bold">
+            <div class="grid grid-cols-2 gap-2.5">
+                <input type="text" id="cTeacher" placeholder="教师姓名" class="w-full glass-input p-3 rounded-2xl text-sm">
+                <input type="text" id="cRoom" placeholder="上课地点" class="w-full glass-input p-3 rounded-2xl text-sm">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <input type="number" step="0.5" id="cCredit" placeholder="学分 (如 2.0)" class="w-full glass-input p-3 rounded-2xl text-sm">
+                <select id="cWeekSpan" class="w-full glass-input p-3 rounded-2xl font-bold text-xs"><option value="1-25">全周</option><option value="1-16">前16周</option><option value="odd">单周</option><option value="even">双周</option></select>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <select id="cDay" class="glass-input p-3 rounded-2xl font-bold text-xs"><option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="7">周日</option></select>
+                <select id="cStart" class="glass-input p-3 rounded-2xl font-bold text-xs" onchange="updateEndSectionOptions()"></select>
+                <select id="cEnd" class="glass-input p-3 rounded-2xl font-bold text-xs"></select>
+            </div>
+            <div class="flex gap-2.5 pt-2"><button onclick="closeCourseModal()" class="flex-1 py-3 font-bold text-rose-500 rounded-2xl bg-rose-500/10 text-sm">取消</button><button onclick="saveCourse()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl text-sm shadow-md">保存课程</button></div>
+        </div>
+    </div>
+
+    <div id="timeModal" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 max-h-[80vh] flex flex-col">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">自定义 10 节课时间段</h3>
+            <div class="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-1" id="sectionTimeInputs"></div>
+            <div class="flex gap-2 pt-2"><button onclick="closeTimeModal()" class="flex-1 py-2.5 font-bold text-rose-500 text-sm">取消</button><button onclick="saveSectionTimes()" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-2xl text-sm">保存</button></div>
+        </div>
+    </div>
+
+    <div id="manageModal" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 flex flex-col max-h-[80vh]">
+            <div class="flex justify-between items-center"><h3 class="text-base font-bold text-rose-600">已存课程管理</h3><button onclick="clearAllCourses()" class="text-xs text-rose-500 underline">清空所有</button></div>
+            <div class="flex-1 overflow-y-auto space-y-2 no-scrollbar" id="manageCourseList"></div>
+            <button onclick="closeManageModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 font-bold rounded-2xl text-sm">关闭</button>
+        </div>
+    </div>
+
+    <div id="todoModal" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">新建待办事项</h3>
+            <input type="text" id="tTitle" placeholder="事项名称" class="w-full glass-input p-3 rounded-2xl text-sm font-bold">
+            <div class="grid grid-cols-2 gap-2"><input type="date" id="tDate" class="glass-input p-2.5 rounded-2xl text-xs"><input type="time" id="tTime" class="glass-input p-2.5 rounded-2xl text-xs"></div>
+            <input type="text" id="tLoc" placeholder="地点 (可选)" class="w-full glass-input p-3 rounded-2xl text-sm">
+            <textarea id="tRemark" placeholder="备注信息 (可选)" class="w-full glass-input p-3 rounded-2xl text-sm"></textarea>
+            <div class="flex gap-2 pt-2"><button onclick="closeTodoModal()" class="flex-1 py-2.5 font-bold text-rose-500 text-sm">取消</button><button onclick="saveTodo()" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-2xl text-sm">保存</button></div>
+        </div>
+    </div>
+
+    <div id="anniversaryModal" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5">
+            <h3 id="aModalTitle" class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="heart" class="w-5 h-5 text-rose-500"></i><span>编辑纪念日程</span></h3>
+            <input type="hidden" id="editAnniversaryId" value="">
+            <input type="text" id="aTitle" placeholder="纪念日名称" class="w-full glass-input p-3 rounded-2xl text-sm font-bold">
+            <input type="date" id="aDate" class="w-full glass-input p-3 rounded-2xl text-xs">
+            <div><label class="text-xs font-bold mb-1 block">选择色彩渐变</label><div class="flex items-center gap-3 pt-1" id="colorPickerContainer"></div></div>
+            <div>
+                <label class="text-xs font-bold mb-1 block">背景图片 (选填)</label>
+                <div class="flex items-center gap-2">
+                    <label class="px-3 py-2 glass-input rounded-2xl text-xs font-bold text-indigo-600 cursor-pointer flex items-center gap-1.5"><i data-lucide="image" class="w-4 h-4"></i><span>上传图片</span><input type="file" id="aBgImgInput" accept="image/*" class="hidden" onchange="handleBgImageUpload(event)"></label>
+                    <button type="button" onclick="clearBgImage()" id="clearBgBtn" class="text-xs text-rose-500 hidden">清除</button>
+                </div>
+                <input type="hidden" id="aBgImgBase64" value=""><div id="bgPreview" class="mt-2 hidden w-full h-16 rounded-2xl bg-cover bg-center border"></div>
+            </div>
+            <div class="flex gap-2 pt-2"><button onclick="closeAnniversaryModal()" class="flex-1 py-2.5 font-bold text-rose-500 text-sm">取消</button><button onclick="saveAnniversary()" class="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-2xl text-sm">保存</button></div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeek = 1;
+        let showOtherWeeks = false;
+        let courses = JSON.parse(localStorage.getItem('GX_COURSES')) || [];
+        let todos = JSON.parse(localStorage.getItem('GX_TODOS')) || [];
+        let anniversaries = JSON.parse(localStorage.getItem('GX_ANNIVERSARIES')) || [];
+        let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth();
+        let selectedCalendarDate = null;
+        let selectedColorTheme = 'from-rose-500 to-pink-600';
+        let defaultTimes = ["08:00-08:45", "08:55-09:40", "10:00-10:45", "10:55-11:40", "14:30-15:15", "15:25-16:10", "16:30-17:15", "17:25-18:10", "19:30-20:15", "20:25-21:10"];
+        let sectionTimes = JSON.parse(localStorage.getItem('GX_TIMES')) || defaultTimes;
+
+        window.onload = () => {
+            initWeekSelect(); initStartSectionSelect(); initColorPicker(); initYearAndMonthSelect();
+            renderHeaderGrid(); renderGrid(); renderTodos(); renderAnniversaries();
+            lucide.createIcons();
+
+            const avatarImg = document.getElementById('avatarImg'), avatarInput = document.getElementById('avatarInput');
+            avatarImg.onclick = () => avatarInput.click();
+            avatarInput.onchange = (e) => {
+                if(e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => avatarImg.src = event.target.result;
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            };
+        };
+
+        function toggleDarkMode() {
+            const html = document.documentElement, slider = document.getElementById('themeSlider');
+            if(html.classList.contains('dark')) { html.classList.remove('dark'); html.classList.add('light'); slider.style.transform = 'translateX(0px)'; }
+            else { html.classList.remove('light'); html.classList.add('dark'); slider.style.transform = 'translateX(32px)'; }
+        }
+
+        function switchMainTab(tabName) {
+            ['scheduleMainView', 'anniversaryMainView', 'todoMainView'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            ['btnSchedule', 'btnAnniversary', 'btnTodo'].forEach(id => document.getElementById(id).classList.remove('active'));
+            if(tabName === 'schedule') { document.getElementById('btnSchedule').classList.add('active'); document.getElementById('scheduleMainView').classList.remove('hidden'); }
+            else if(tabName === 'anniversary') { document.getElementById('btnAnniversary').classList.add('active'); document.getElementById('anniversaryMainView').classList.remove('hidden'); renderAnniversaries(); }
+            else if(tabName === 'todo') { document.getElementById('btnTodo').classList.add('active'); document.getElementById('todoMainView').classList.remove('hidden'); renderTodos(); }
+        }
+
+        // 坚果云配合：数据导入导出备份
+        function exportData() {
+            const data = { courses, todos, anniversaries, sectionTimes };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'schedule_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(e) {
+            const f = e.target.files[0]; if(!f) return; const r = new FileReader();
+            r.onload = (evt) => {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if(data.courses) courses = data.courses;
+                    if(data.todos) todos = data.todos;
+                    if(data.anniversaries) anniversaries = data.anniversaries;
+                    if(data.sectionTimes) sectionTimes = data.sectionTimes;
+
+                    localStorage.setItem('GX_COURSES', JSON.stringify(courses));
+                    localStorage.setItem('GX_TODOS', JSON.stringify(todos));
+                    localStorage.setItem('GX_ANNIVERSARIES', JSON.stringify(anniversaries));
+                    localStorage.setItem('GX_TIMES', JSON.stringify(sectionTimes));
+
+                    renderGrid(); renderTodos(); renderAnniversaries();
+                    alert('数据导入成功！');
+                } catch(err) {
+                    alert('文件格式错误，导入失败。');
+                }
+            };
+            r.readAsText(f);
+        }
+
+        function openCloudGuideModal() { document.getElementById('cloudGuideModal').classList.replace('hidden', 'flex'); }
+        function closeCloudGuideModal() { document.getElementById('cloudGuideModal').classList.replace('flex', 'hidden'); }
+
+        // 基础模块渲染函数
+        function initYearAndMonthSelect() {
+            const ySel = document.getElementById('calendarYearSelect'), mSel = document.getElementById('calendarMonthSelect');
+            ySel.innerHTML = ''; mSel.innerHTML = '';
+            const currY = new Date().getFullYear();
+            for(let y = currY - 3; y <= currY + 3; y++) { let opt = document.createElement('option'); opt.value = y; opt.innerText = y+'年'; if(y===calendarYear)opt.selected=true; ySel.appendChild(opt); }
+            for(let m = 0; m < 12; m++) { let opt = document.createElement('option'); opt.value = m; opt.innerText = (m+1)+'月'; if(m===calendarMonth)opt.selected=true; mSel.appendChild(opt); }
+        }
+        function onCalendarYearChange(v) { calendarYear = parseInt(v); renderCalendar(); }
+        function onCalendarMonthChange(v) { calendarMonth = parseInt(v); renderCalendar(); }
+        function initStartSectionSelect() {
+            const cStart = document.getElementById('cStart'); cStart.innerHTML = '';
+            for(let i=1; i<=10; i++) { let opt = document.createElement('option'); opt.value=i; opt.innerText=`第${i}节开始`; cStart.appendChild(opt); }
+            updateEndSectionOptions();
+        }
+        function updateEndSectionOptions() {
+            const startVal = parseInt(document.getElementById('cStart').value) || 1, cEnd = document.getElementById('cEnd'); cEnd.innerHTML = '';
+            for(let i=startVal; i<=10; i++) { let opt = document.createElement('option'); opt.value=i; opt.innerText=`到第${i}节`; cEnd.appendChild(opt); }
+        }
+        function initWeekSelect() {
+            const s = document.getElementById('weekSelect'); s.innerHTML = '';
+            for(let i=1; i<=25; i++) { let opt = document.createElement('option'); opt.value=i; opt.innerText=`第 ${i} 周`; if(i===currentWeek)opt.selected=true; s.appendChild(opt); }
+        }
+        function onWeekSelectChange(v) { currentWeek = parseInt(v); renderHeaderGrid(); renderGrid(); }
+        function changeWeek(step) { if(currentWeek+step>=1 && currentWeek+step<=25) { currentWeek += step; document.getElementById('weekSelect').value = currentWeek; renderHeaderGrid(); renderGrid(); } }
+        function toggleShowOtherWeeks() { showOtherWeeks = document.getElementById('showOtherWeeksToggle').checked; renderGrid(); }
+        function getWeekDateString(offset) {
+            const now = new Date(), dayOfWeek = now.getDay() || 7, monday = new Date(now);
+            monday.setDate(now.getDate() - (dayOfWeek - 1) + (currentWeek - 1) * 7 + (offset - 1));
+            return `${monday.getMonth() + 1}/${monday.getDate()}`;
+        }
+        function renderHeaderGrid() {
+            document.getElementById('weekHeaderGrid').innerHTML = `
+                <div class="py-3 text-center text-sm font-black opacity-70">节次</div>
+                ${['周一','周二','周三','周四','周五'].map((d,i)=>`<div class="py-3 text-center font-black"><div>${d}</div><div class="text-xs opacity-75 font-mono">${getWeekDateString(i+1)}</div></div>`).join('')}
+                ${['周六','周日'].map((d,i)=>`<div class="py-3 text-center font-black text-indigo-500"><div>${d}</div><div class="text-xs opacity-75 font-mono">${getWeekDateString(i+6)}</div></div>`).join('')}
+            `;
+        }
+        function isCourseInWeek(c, w) {
+            if(c.weekSpan==='odd') return w%2!==0; if(c.weekSpan==='even') return w%2===0; if(c.weekSpan==='1-16') return w<=16; return true;
+        }
+        function renderGrid() {
+            const grid = document.getElementById('scheduleGrid'); grid.innerHTML = '';
+            const occupied = new Set(), CELL_HEIGHT = 90;
+            for(let s=1; s<=10; s++) {
+                const row = document.createElement('div'); row.className = 'grid grid-cols-8 min-h-[90px]';
+                row.innerHTML = `<div class="p-2 flex flex-col items-center justify-center border-b border-r bg-slate-100/40 dark:bg-slate-900/60"><span class="text-sm font-black">第 ${s} 节</span><span class="text-xs opacity-75 font-mono">${sectionTimes[s-1]}</span></div>`;
+                for(let d=1; d<=7; d++) {
+                    const key = `${d}-${s}`, cell = document.createElement('div'); cell.className = 'relative p-1.5 border-b border-r min-h-[90px]';
+                    if(!occupied.has(key)) {
+                        const match = courses.filter(c => c.day == d && c.start == s);
+                        const c = match.find(item => isCourseInWeek(item, currentWeek)) || (showOtherWeeks ? match[0] : null);
+                        if(c) {
+                            const isCurr = isCourseInWeek(c, currentWeek), span = parseInt(c.span);
+                            const card = document.createElement('div');
+                            card.className = `p-3 rounded-2xl flex flex-col justify-between shadow-lg text-white cursor-pointer transition-all hover:scale-105 ${!isCurr?'opacity-35 grayscale':''}`;
+                            card.style.background = `linear-gradient(135deg, ${c.color}, ${c.color}dd)`;
+                            card.style.height = `${span * CELL_HEIGHT - 12}px`; card.style.position = 'absolute'; card.style.width = 'calc(100% - 12px)'; card.style.zIndex = '10';
+                            card.onclick = () => openCourseDetailModal(c);
+                            card.innerHTML = `<div><div class="font-extrabold text-sm leading-tight">${c.name}</div><div class="mt-1 text-xs opacity-95">📍 ${c.room||''}</div></div><div class="flex justify-between items-end text-xs opacity-90 pt-2 border-t border-white/20"><span>${c.teacher||''}</span>${c.credit?`<span>${c.credit}学分</span>`:''}</div>`;
+                            cell.appendChild(card);
+                            for(let i=1; i<span; i++) occupied.add(`${d}-${s+i}`);
+                        }
+                    }
+                    row.appendChild(cell);
+                }
+                grid.appendChild(row);
+            }
+            lucide.createIcons();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
+            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay(), totalDays = new Date(calendarYear, calendarMonth+1, 0).getDate();
+            document.getElementById('calendarYearSelect').value = calendarYear; document.getElementById('calendarMonthSelect').value = calendarMonth;
+            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+            for(let day=1; day<=totalDays; day++) {
+                const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const has = todos.some(t => t.date === dateStr && !t.done), isSel = selectedCalendarDate === dateStr;
+                const btn = document.createElement('button');
+                btn.onclick = () => { selectedCalendarDate = dateStr; renderCalendar(); renderTodos(); };
+                btn.className = `aspect-square rounded-2xl flex flex-col items-center justify-center text-sm font-black border ${has?'bg-rose-500 text-white border-rose-400':isSel?'bg-indigo-600 text-white border-indigo-500':'glass-input'}`;
+                btn.innerHTML = `<span>${day}</span>`;
+                grid.appendChild(btn);
+            }
+        }
+        function moveCalendarMonth(s) { calendarMonth += s; if(calendarMonth>11){calendarMonth=0;calendarYear++;} if(calendarMonth<0){calendarMonth=11;calendarYear--;} renderCalendar(); }
+        function resetCalendarToAll() { selectedCalendarDate = null; renderCalendar(); renderTodos(); }
+        function renderTodos() {
+            renderCalendar(); const list = document.getElementById('todoList'), badge = document.getElementById('todoBadge'); list.innerHTML = '';
+            const active = todos.filter(t => !t.done);
+            if(active.length>0) { badge.innerText = active.length; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+            const display = selectedCalendarDate ? todos.filter(t => t.date === selectedCalendarDate) : todos;
+            if(display.length === 0) { list.innerHTML = '<div class="text-center py-12 opacity-50 text-sm font-bold">暂无待办事项</div>'; return; }
+            display.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `p-4 border rounded-3xl flex flex-col justify-between shadow-sm ${t.done?'opacity-50 bg-slate-100 dark:bg-slate-800':'glass-modal'}`;
+                card.innerHTML = `<div class="flex items-start justify-between gap-3"><div class="flex items-start gap-3 min-w-0"><button onclick="checkTodo(${t.id})" class="mt-1 w-5 h-5 rounded-lg border-2 border-indigo-600 flex items-center justify-center">${t.done?'<div class="w-2.5 h-2.5 bg-indigo-600 rounded-sm"></div>':''}</button><div class="min-w-0"><h4 class="font-extrabold text-base ${t.done?'line-through':''}">${t.title}</h4><p class="text-xs mt-1 opacity-80">${t.remark||''}</p><div class="text-xs font-semibold opacity-75 mt-2">📅 ${t.date||''} ${t.time||''} ${t.loc?'@ '+t.loc:''}</div></div></div><button onclick="delTodo(${t.id})" class="text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+                list.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+        function checkTodo(id) { todos = todos.map(t => t.id===id ? {...t, done: !t.done} : t); localStorage.setItem('GX_TODOS', JSON.stringify(todos)); renderTodos(); }
+        function delTodo(id) { todos = todos.filter(t => t.id!==id); localStorage.setItem('GX_TODOS', JSON.stringify(todos)); renderTodos(); }
+        function saveTodo() {
+            const title = document.getElementById('tTitle').value.trim(); if(!title) return alert('请输入名称！');
+            todos.push({ id: Date.now(), title, date: document.getElementById('tDate').value, time: document.getElementById('tTime').value, loc: document.getElementById('tLoc').value.trim(), remark: document.getElementById('tRemark').value.trim(), done: false });
+            localStorage.setItem('GX_TODOS', JSON.stringify(todos)); closeTodoModal(); renderTodos();
+        }
+
+        function initColorPicker() {
+            const colors = ['from-rose-500 to-pink-600', 'from-indigo-500 to-purple-600', 'from-amber-500 to-orange-600', 'from-emerald-500 to-teal-600', 'from-blue-500 to-cyan-600'];
+            const c = document.getElementById('colorPickerContainer'); c.innerHTML = '';
+            colors.forEach((col, idx) => {
+                let btn = document.createElement('button'); btn.type = 'button';
+                btn.className = `w-7 h-7 rounded-full bg-gradient-to-r ${col} border-2 ${idx===0?'border-slate-800 dark:border-white scale-110':'border-transparent'}`;
+                btn.onclick = () => { selectedColorTheme = col; Array.from(c.children).forEach(b=>b.className=b.className.replace(' border-slate-800 dark:border-white scale-110','')); btn.className+=' border-slate-800 dark:border-white scale-110'; };
+                c.appendChild(btn);
+            });
+        }
+        function handleBgImageUpload(e) {
+            const f = e.target.files[0]; if(!f) return; const r = new FileReader();
+            r.onload = (evt) => { document.getElementById('aBgImgBase64').value = evt.target.result; const p = document.getElementById('bgPreview'); p.style.backgroundImage = `url(${evt.target.result})`; p.classList.remove('hidden'); document.getElementById('clearBgBtn').classList.remove('hidden'); };
+            r.readAsDataURL(f);
+        }
+        function clearBgImage() { document.getElementById('aBgImgBase64').value = ''; document.getElementById('bgPreview').classList.add('hidden'); document.getElementById('clearBgBtn').classList.add('hidden'); }
+        function renderAnniversaries() {
+            const list = document.getElementById('anniversaryList'), timeline = document.getElementById('anniversaryTimeline');
+            if(!list || !timeline) return; list.innerHTML = ''; timeline.innerHTML = '';
+            if(anniversaries.length === 0) { list.innerHTML = '<div class="col-span-full text-center py-12 opacity-50">暂无纪念日</div>'; timeline.innerHTML = '<div class="text-xs opacity-50">暂无节点</div>'; return; }
+            const today = new Date(); today.setHours(0,0,0,0);
+            anniversaries.forEach(a => {
+                const target = new Date(a.date); target.setHours(0,0,0,0);
+                const diff = Math.ceil((target - today)/(1000*60*60*24));
+                const card = document.createElement('div');
+                card.className = `aspect-square p-5 rounded-3xl text-white shadow-xl flex flex-col justify-between items-center text-center relative bg-cover bg-center ${a.bgImg?'':'bg-gradient-to-br '+a.theme}`;
+                if(a.bgImg) card.style.backgroundImage = `url(${a.bgImg})`;
+                card.innerHTML = `${a.bgImg?'<div class="absolute inset-0 bg-black/40"></div>':''}<div class="w-full flex justify-end z-10"><button onclick="delAnniversary(${a.id})" class="p-1.5 bg-black/30 rounded-xl"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div><div class="my-auto z-10"><h4 class="font-black text-2xl">${a.title}</h4><p class="text-xs opacity-90">${a.date}</p></div><div class="w-full bg-black/30 backdrop-blur-md rounded-2xl py-2 z-10"><div class="text-[10px] uppercase opacity-80">${diff<0?'已过去':'剩余'}</div><div class="text-2xl font-black">${Math.abs(diff)}</div></div>`;
+                list.appendChild(card);
+
+                const node = document.createElement('div');
+                node.className = 'flex flex-col items-center flex-shrink-0 relative min-w-[120px]';
+                node.innerHTML = `<div class="mb-3 flex flex-col items-center"><div class="bg-indigo-600 text-white font-black text-xs px-3 py-1 rounded-full">${a.date}</div><div class="text-sm font-black mt-1">${a.title}</div></div><div class="w-0.5 h-8 bg-indigo-500 my-1"></div><div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800"><i data-lucide="heart" class="w-5 h-5"></i></div>`;
+                timeline.appendChild(node);
+            });
+            lucide.createIcons();
+        }
+        function saveAnniversary() {
+            const title = document.getElementById('aTitle').value.trim(), date = document.getElementById('aDate').value;
+            if(!title || !date) return alert('请填完整！');
+            anniversaries.push({ id: Date.now(), title, date, theme: selectedColorTheme, bgImg: document.getElementById('aBgImgBase64').value || null });
+            localStorage.setItem('GX_ANNIVERSARIES', JSON.stringify(anniversaries)); closeAnniversaryModal(); renderAnniversaries();
+        }
+        function delAnniversary(id) { anniversaries = anniversaries.filter(a => a.id!==id); localStorage.setItem('GX_ANNIVERSARIES', JSON.stringify(anniversaries)); renderAnniversaries(); }
+
+        function openCourseDetailModal(c) {
+            document.getElementById('detailBadge').style.backgroundColor = c.color;
+            document.getElementById('detailName').innerText = c.name;
+            document.getElementById('detailTimeSpan').innerText = `周${['一','二','三','四','五','六','日'][c.day-1]} 第${c.start}-${c.start+c.span-1}节`;
+            document.getElementById('detailTeacher').innerText = c.teacher||'无'; document.getElementById('detailRoom').innerText = c.room||'无';
+            document.getElementById('detailCredit').innerText = c.credit?c.credit+'学分':'无'; document.getElementById('detailWeeks').innerText = c.weekSpan;
+            document.getElementById('courseDetailModal').classList.replace('hidden', 'flex');
+        }
+        function closeCourseDetailModal() { document.getElementById('courseDetailModal').classList.replace('flex', 'hidden'); }
+        function saveCourse() {
+            const name = document.getElementById('cName').value.trim(); if(!name) return alert('请输入名称！');
+            const start = parseInt(document.getElementById('cStart').value), end = parseInt(document.getElementById('cEnd').value);
+            if(end < start) return alert('结束节次不能小于开始节次！');
+            courses.push({ id: Date.now(), name, teacher: document.getElementById('cTeacher').value.trim(), room: document.getElementById('cRoom').value.trim(), credit: document.getElementById('cCredit').value.trim(), weekSpan: document.getElementById('cWeekSpan').value, day: parseInt(document.getElementById('cDay').value), start, span: (end-start)+1, color: ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6'][Math.floor(Math.random()*5)] });
+            localStorage.setItem('GX_COURSES', JSON.stringify(courses)); closeCourseModal(); renderGrid();
+        }
+        function openTimeModal() {
+            const c = document.getElementById('sectionTimeInputs'); c.innerHTML = '';
+            for(let i=1; i<=10; i++) c.innerHTML += `<div class="flex items-center gap-2 text-xs"><span class="w-16 font-bold">第 ${i} 节:</span><input type="text" value="${sectionTimes[i-1]}" id="timeInput_${i}" class="flex-1 glass-input p-2 rounded-2xl font-mono"></div>`;
+            document.getElementById('timeModal').classList.replace('hidden', 'flex');
+        }
+        function saveSectionTimes() {
+            for(let i=1; i<=10; i++) sectionTimes[i-1] = document.getElementById(`timeInput_${i}`).value.trim();
+            localStorage.setItem('GX_TIMES', JSON.stringify(sectionTimes)); closeTimeModal(); renderGrid();
+        }
+        function openManageModal() {
+            const l = document.getElementById('manageCourseList'); l.innerHTML = '';
+            courses.forEach(c => l.innerHTML += `<div class="p-3 glass-input rounded-2xl flex items-center justify-between text-xs"><div><div class="font-bold">${c.name}</div><div>周${c.day} 第${c.start}-${c.start+c.span-1}节</div></div><button onclick="deleteCourse(${c.id})" class="text-rose-500 font-bold">删除</button></div>`);
+            document.getElementById('manageModal').classList.replace('hidden', 'flex');
+        }
+        function deleteCourse(id) { courses = courses.filter(c => c.id!==id); localStorage.setItem('GX_COURSES', JSON.stringify(courses)); openManageModal(); renderGrid(); }
+        function clearAllCourses() { if(confirm('确定清空？')) { courses = []; localStorage.setItem('GX_COURSES', JSON.stringify(courses)); openManageModal(); renderGrid(); } }
+        function openCourseModal() { document.getElementById('courseModal').classList.replace('hidden', 'flex'); }
+        function closeCourseModal() { document.getElementById('courseModal').classList.replace('flex', 'hidden'); }
+        function closeManageModal() { document.getElementById('manageModal').classList.replace('flex', 'hidden'); }
+        function openTodoModal() { document.getElementById('todoModal').classList.replace('hidden', 'flex'); }
+        function closeTodoModal() { document.getElementById('todoModal').classList.replace('flex', 'hidden'); }
+        function openAnniversaryModal() { document.getElementById('anniversaryModal').classList.replace('hidden', 'flex'); }
+        function closeAnniversaryModal() { document.getElementById('anniversaryModal').classList.replace('flex', 'hidden'); }
+        function closeTimeModal() { document.getElementById('timeModal').classList.replace('flex', 'hidden'); }
+    </script>
+</body>
+</html>
+
